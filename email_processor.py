@@ -118,8 +118,30 @@ def process_csv_data(csv_content, config=None):
                 "include_ids": True
             }
         
+        # Debug: verificar contenido del CSV
+        print(f"DEBUG: CSV content length: {len(csv_content)}")
+        lines = csv_content.split('\n')
+        print(f"DEBUG: Total lines: {len(lines)}")
+        print(f"DEBUG: First line: {lines[0][:100]}...")
+        if len(lines) > 1:
+            print(f"DEBUG: Second line: {lines[1][:100]}...")
+        
         # Leer CSV desde string
         df = pd.read_csv(io.StringIO(csv_content))
+        print(f"DEBUG: DataFrame shape: {df.shape}")
+        print(f"DEBUG: Columns: {list(df.columns)}")
+        
+        # Verificar si existe la columna Employee Status
+        if 'Employee Status' not in df.columns:
+            return {
+                "success": False,
+                "message": f"Columna 'Employee Status' no encontrada. Columnas disponibles: {list(df.columns)}",
+                "emails": []
+            }
+        
+        # Debug: mostrar valores únicos de Employee Status
+        employee_statuses = df['Employee Status'].value_counts()
+        print(f"DEBUG: Employee Status values: {employee_statuses.to_dict()}")
         
         # Detectar mes automáticamente
         df['Date'] = pd.to_datetime(df['Date'], dayfirst=True, errors='coerce')
@@ -128,11 +150,12 @@ def process_csv_data(csv_content, config=None):
         
         # Filtrar solo AFNM
         afnm_data = df[df['Employee Status'] == 'AFNM']
+        print(f"DEBUG: AFNM records found: {len(afnm_data)}")
         
         if afnm_data.empty:
             return {
                 "success": False,
-                "message": "No se encontraron consultores AFNM en el archivo",
+                "message": f"No se encontraron consultores AFNM. Employee Status values: {employee_statuses.to_dict()}",
                 "emails": []
             }
         
