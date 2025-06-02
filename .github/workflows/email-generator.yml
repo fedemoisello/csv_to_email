@@ -27,16 +27,29 @@ jobs:
       run: |
         pip install -r requirements.txt
     
-    - name: Create CSV file
+    - name: Create CSV file safely
       run: |
-        echo "${{ github.event.client_payload.csv_data || github.event.inputs.csv_data }}" > input.csv
+        cat > input.csv << 'EOF'
+        ${{ github.event.client_payload.csv_data || github.event.inputs.csv_data }}
+        EOF
+    
+    - name: Debug CSV file
+      run: |
+        echo "=== CSV FILE INFO ==="
+        ls -la input.csv
+        echo "=== FIRST 3 LINES ==="
+        head -3 input.csv
+        echo "=== TOTAL LINES ==="
+        wc -l input.csv
     
     - name: Generate emails
       id: generate
       run: |
-        result=$(python email_processor.py input.csv)
-        echo "result=$result" >> $GITHUB_OUTPUT
+        python email_processor.py input.csv > result.json
+        cat result.json
     
-    - name: Output result
+    - name: Output result for Make.com
       run: |
-        echo '${{ steps.generate.outputs.result }}'
+        echo "EMAILS_JSON<<EOF" >> $GITHUB_OUTPUT
+        cat result.json >> $GITHUB_OUTPUT
+        echo "EOF" >> $GITHUB_OUTPUT
