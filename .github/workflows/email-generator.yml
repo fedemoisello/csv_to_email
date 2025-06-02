@@ -1,0 +1,42 @@
+name: Email Generator
+
+on:
+  repository_dispatch:
+    types: [generate-emails]
+  workflow_dispatch:
+    inputs:
+      csv_data:
+        description: 'CSV content'
+        required: true
+        type: string
+
+jobs:
+  generate-emails:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+    
+    - name: Install dependencies
+      run: |
+        pip install -r requirements.txt
+    
+    - name: Create CSV file
+      run: |
+        echo "${{ github.event.client_payload.csv_data || github.event.inputs.csv_data }}" > input.csv
+    
+    - name: Generate emails
+      id: generate
+      run: |
+        result=$(python email_processor.py input.csv)
+        echo "result=$result" >> $GITHUB_OUTPUT
+    
+    - name: Output result
+      run: |
+        echo '${{ steps.generate.outputs.result }}'
